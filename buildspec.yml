@@ -1,35 +1,30 @@
-version: 0.2
+version: "0.2"
 
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
-      - echo $AWS_DEFAULT_REGION
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 979490057625.dkr.ecr.us-east-1.amazonaws.com
-      - REPOSITORY_NAME="demo-nginx"       
-      - REPOSITORY_URI=979490057625.dkr.ecr.us-east-1.amazonaws.com/demo-nginx:latest
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-phases:
-  pre_build:
-    commands:
-      - echo Logging in to Docker Hub...
+      # Login to Amazon ECR
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin 979490057625.dkr.ecr.us-east-1.amazonaws.com
+
+      # Login to Docker Hub
+      - echo "Logging in to Docker Hub..."
       - echo "$DOCKER_PASSWORD" | docker login -u "hamzakhan1o1" --password-stdin khaniham1
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 979490057625.dkr.ecr.us-east-1.amazonaws.com
+
+      # Define image details
       - REPOSITORY_NAME="demo-nginx"
-      - REPOSITORY_URI=979490057625.dkr.ecr.us-east-1.amazonaws.com/demo-nginx:latest
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-  build:
-    commands:
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_NAME:latest .
+      - REPOSITORY_URI="979490057625.dkr.ecr.us-east-1.amazonaws.com/demo-nginx:latest"
+      - COMMIT_HASH=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c 1-7)
+      - IMAGE_TAG="${COMMIT_HASH:=latest}"
+
   post_build:
     commands:
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - printf '[{"name":"golang-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      # Push image to ECR and Docker Hub
+      - docker push "$REPOSITORY_URI:latest"
+      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
+
+      # Generate image definitions for ECS deployment
+      - printf '[{"name":"golang-container","imageUri":"%s"}]' "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
 
 artifacts:
   files: imagedefinitions.json
