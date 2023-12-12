@@ -9,7 +9,8 @@ phases:
 
       # Login to Docker Hub
       - echo "Logging in to Docker Hub..."
-      - echo "$DOCKER_PASSWORD" | docker login -u "hamzakhan1o1" --password-stdin khaniham1
+      - DOCKER_PASSWORD="khaniham1"
+      - echo "$DOCKER_PASSWORD" | docker login -u "hamzakhan1o1" --password-stdin 
 
       # Define image details
       - REPOSITORY_NAME="demo-nginx"
